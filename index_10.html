@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cover Check</title>
+<meta name="description" content="Is your company health cover enough? In two minutes, see what your policy would pay for a hospital bill, and what you would pay yourself.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Cover Check: is your company health cover enough?">
+<meta property="og:description" content="Two-minute check. No sign-up, no phone number, nothing saved.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232D47A6' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z'/%3E%3Cpath d='M8.5 12.2l2.4 2.4 4.6-4.8'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,700;112,800&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one question per screen in a centred phone-width column, a fixed bottom bar for Back / Continue, and a longer results screen. */
+:root{
+  --bg:#F3F5FA; --surface:#FFFFFF; --sunk:#E9EDF5; --line:#D3D9E6; --line-strong:#B9C2D6;
+  --ink:#121829; --muted:#586078; --accent:#2D47A6; --accent-ink:#FFFFFF; --accent-soft:#E7ECFB;
+  --ok:#1C7550; --ok-soft:#E1F3EA; --warn:#8F5600; --warn-soft:#FBEFD9; --gap:#B23C1B; --gap-soft:#FCE6DE;
+  --display:"Archivo","Arial Narrow",Arial,sans-serif;
+  --body:"Public Sans","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:14px; --shadow:0 1px 2px rgba(18,24,41,.05),0 6px 24px rgba(18,24,41,.06);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D101D; --surface:#151A2B; --sunk:#1C2236; --line:#2A3150; --line-strong:#3B4468;
+  --ink:#E8EBF4; --muted:#9CA3BB; --accent:#91A5F4; --accent-ink:#0D101D; --accent-soft:#1F2850;
+  --ok:#63CA9D; --ok-soft:#132A20; --warn:#E5B264; --warn-soft:#2B2213; --gap:#F28D6A; --gap-soft:#2F1A13;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D101D; --surface:#151A2B; --sunk:#1C2236; --line:#2A3150; --line-strong:#3B4468;
+  --ink:#E8EBF4; --muted:#9CA3BB; --accent:#91A5F4; --accent-ink:#0D101D; --accent-soft:#1F2850;
+  --ok:#63CA9D; --ok-soft:#132A20; --warn:#E5B264; --warn-soft:#2B2213; --gap:#F28D6A; --gap-soft:#2F1A13;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.25); color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+button,input,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+
+/* Top bar */
+.top{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.top .in{max-width:680px;margin:0 auto;padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:9px;font:800 17px/1 var(--display);font-stretch:112%}
+.brand svg{width:24px;height:24px;color:var(--accent)}
+.stepno{font:600 13px/1 var(--body);color:var(--muted);font-variant-numeric:tabular-nums}
+.progress{height:4px;background:var(--sunk)}
+.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .35s ease}
+
+/* Screens */
+main{max-width:680px;margin:0 auto;padding:28px max(16px,env(safe-area-inset-right,0px)) 120px max(16px,env(safe-area-inset-left,0px))}
+.screen{display:grid;gap:20px;animation:in .3s ease}
+@keyframes in{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}
+.kicker{font:700 12px/1.2 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font:800 clamp(32px,8vw,46px)/1.04 var(--display);font-stretch:112%;margin:0;letter-spacing:-.01em;text-wrap:balance;outline:none}
+h2{font:700 clamp(23px,5.4vw,29px)/1.18 var(--display);font-stretch:112%;margin:0;text-wrap:balance;outline:none}
+h3{font:700 17px/1.3 var(--body);margin:0}
+.lead{font-size:17.5px;color:var(--muted);margin:0;text-wrap:pretty}
+.sub{color:var(--muted);margin:-10px 0 0;font-size:15px}
+.q{display:grid;gap:12px}
+.qlabel{font-weight:700;font-size:15px}
+
+/* Intro */
+.ticks{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.ticks li{display:flex;gap:10px;align-items:flex-start;font-size:15.5px}
+.ticks svg{flex:none;width:20px;height:20px;color:var(--ok);margin-top:2px}
+.hero-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;display:grid;gap:16px}
+.meta{font-size:13.5px;color:var(--muted);text-align:center;margin:0}
+
+/* Choice cards */
+.choices{display:grid;gap:10px}
+.choices.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.choice{position:relative;display:block;min-width:0}
+.choice input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.choice input:disabled{cursor:default}
+.c{display:flex;align-items:center;gap:12px;padding:14px 16px;min-height:58px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);transition:border-color .15s,background .15s,box-shadow .15s}
+.c::before{content:"";flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--line-strong);transition:border-width .15s,border-color .15s}
+.choice input[type=checkbox]+.c::before{border-radius:6px}
+.choice input:hover+.c{border-color:var(--line-strong)}
+.choice input:checked+.c{border-color:var(--accent);background:var(--accent-soft)}
+.choice input[type=radio]:checked+.c::before{border:6px solid var(--accent)}
+.choice input[type=checkbox]:checked+.c::before{border-color:var(--accent);background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/13px no-repeat}
+.choice input:focus-visible+.c{outline:2.5px solid var(--accent);outline-offset:2px}
+.choice input:disabled+.c{opacity:.75}
+.tx{display:grid;gap:2px;min-width:0;flex:1}
+.t{font-weight:600;font-size:15.5px;line-height:1.3}
+.s{font-size:13.5px;color:var(--muted);line-height:1.35}
+.v{font:600 14px/1 var(--mono);color:var(--muted);white-space:nowrap}
+
+/* Scale 1-5 */
+.scale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.scale .c{justify-content:center;min-height:64px;padding:10px 4px;font:700 22px/1 var(--display)}
+.scale .c::before{display:none}
+.scale-ends{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:-4px}
+
+/* Pills */
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pills .c{min-height:44px;padding:9px 16px;border-radius:999px;font-weight:600;font-size:15px}
+.pills .c::before{display:none}
+
+/* Inputs */
+.field{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;max-width:280px}
+.field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.field span{padding:0 12px;font:600 14px var(--mono);color:var(--muted);background:var(--sunk);align-self:stretch;display:flex;align-items:center;white-space:nowrap}
+.field input{border:0;background:transparent;padding:13px 12px;width:100%;min-width:0;font:600 16px var(--mono);outline:none}
+textarea{width:100%;min-height:96px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 14px;resize:vertical;outline:none;font-size:15.5px}
+textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.stepper{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);width:max-content;overflow:hidden}
+.stepper button{width:48px;height:48px;border:0;background:var(--sunk);font:600 22px/1 var(--body);cursor:pointer}
+.stepper button:focus-visible{outline:2.5px solid var(--accent);outline-offset:-3px}
+.stepper output{min-width:92px;text-align:center;font:600 16px var(--mono)}
+
+/* Notes */
+.help{background:var(--sunk);border-radius:12px;padding:14px 16px;font-size:14.5px}
+.help ul{margin:6px 0 0;padding-left:18px}
+.flag{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:12px 14px;font-size:14px;margin:0}
+.est{display:inline-flex;align-items:center;gap:6px;justify-self:start;font:700 12px/1 var(--body);letter-spacing:.04em;text-transform:uppercase;padding:6px 10px;border-radius:999px;background:var(--warn-soft);color:var(--warn)}
+.range{font-size:14.5px;color:var(--ink);margin:2px 0 0}
+.assume{font-size:13.5px;color:var(--muted);margin:0}
+.note-sm{font-size:13.5px;color:var(--muted);margin:6px 0 0}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 22px;border-radius:12px;border:1.5px solid var(--accent);background:var(--accent);color:var(--accent-ink);font:700 16px/1 var(--body);text-decoration:none;cursor:pointer;transition:transform .1s,opacity .15s}
+.btn:active{transform:scale(.98)}
+.btn:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.wide{width:100%}
+.btn[aria-disabled="true"],.btn:disabled{opacity:.4;pointer-events:none}
+.btn svg{width:20px;height:20px}
+.linkbtn{background:none;border:0;padding:6px 0;color:var(--accent);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+/* Bottom nav */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav .in{max-width:680px;margin:0 auto;padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:auto 1fr;gap:10px}
+.nav .btn{width:100%}
+
+/* Result */
+.verdict{display:inline-flex;align-items:center;gap:8px;justify-self:start;font:700 13px/1 var(--body);letter-spacing:.04em;text-transform:uppercase;padding:8px 12px;border-radius:999px}
+.verdict.ok{background:var(--ok-soft);color:var(--ok)} .verdict.part{background:var(--warn-soft);color:var(--warn)} .verdict.bad{background:var(--gap-soft);color:var(--gap)}
+.verdict i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:22px;display:grid;gap:16px;min-width:0}
+.big{display:grid;gap:4px}
+.big .lbl{font-size:15px;color:var(--muted)}
+.big .num{font:800 clamp(44px,12vw,64px)/1 var(--display);font-stretch:112%;font-variant-numeric:tabular-nums;color:var(--gap);letter-spacing:-.01em}
+.big .num.ok{color:var(--ok)}
+.big .after{font-size:15.5px;color:var(--muted)}
+.bar{display:flex;height:14px;border-radius:999px;overflow:hidden;background:var(--sunk)}
+.bar i{display:block;height:100%;transition:width .5s ease}
+.bar .p{background:var(--ok)} .bar .y{background:var(--gap)}
+.legend{display:flex;justify-content:space-between;gap:12px;font-size:13.5px;color:var(--muted)}
+.legend b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.reasons{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.reasons li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:14px 16px;border-radius:12px;background:var(--gap-soft)}
+.reasons li.ok{background:var(--ok-soft)}
+.reasons .rt{font-weight:700}
+.reasons .ra{font:600 15px var(--mono);color:var(--gap);white-space:nowrap}
+.reasons .rd{grid-column:1/-1;font-size:14px;color:var(--ink);opacity:.85}
+.mirror{display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:12px;border:1.5px dashed var(--line-strong);font-size:15px}
+.mirror .score{font:800 28px/1 var(--display);color:var(--accent);flex:none}
+.tweak .qlabel{font-size:14px;color:var(--muted);font-weight:600}
+details.acc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+details.acc summary{list-style:none;cursor:pointer;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;font:700 17px/1.3 var(--body)}
+details.acc summary::-webkit-details-marker{display:none}
+details.acc summary::after{content:"";width:10px;height:10px;border-right:2.5px solid var(--muted);border-bottom:2.5px solid var(--muted);transform:rotate(45deg);transition:transform .2s;flex:none;margin-top:-4px}
+details.acc[open] summary::after{transform:rotate(-135deg);margin-top:4px}
+details.acc summary:focus-visible{outline:2.5px solid var(--accent);outline-offset:-3px}
+.acc .body{padding:0 20px 20px;display:grid;gap:14px;font-size:15px}
+.acc .body p{margin:0}
+.tl{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.tl li{display:grid;grid-template-columns:100px minmax(0,1fr);gap:12px}
+.tl .w{font:600 13px/1.5 var(--mono);color:var(--accent)}
+@media (max-width:420px){.tl li{grid-template-columns:minmax(0,1fr);gap:2px}}
+.opt{display:grid;gap:3px;padding-top:12px;border-top:1px solid var(--line)}
+.opt:first-child{border-top:0;padding-top:0}
+.opt .tag{font:700 11.5px/1 var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.opt p{font-size:14.5px}
+ol.hr{margin:0;padding-left:20px;display:grid;gap:6px}
+table{width:100%;border-collapse:collapse;font:500 13.5px/1.4 var(--mono);font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto}
+td{padding:8px 0;border-bottom:1px dashed var(--line);vertical-align:top}
+td:last-child{text-align:right;white-space:nowrap;padding-left:12px}
+tr.sec td{text-align:left;font:700 11.5px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:0;padding-top:16px}
+tr.ded td:last-child{color:var(--gap)}
+tr.tot td{border-bottom:0;border-top:1.5px solid var(--ink);font-weight:600;padding-top:10px}
+tr.zero{opacity:.5}
+
+/* Feedback */
+.feedback{background:var(--accent-soft);border:1.5px solid var(--accent);border-radius:var(--r);padding:22px;display:grid;gap:18px}
+.feedback .lead{color:var(--ink);font-size:15.5px}
+.feedback .c{background:var(--surface)}
+.pills .choice input:checked+.c,.scale .choice input:checked+.c{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.toast{font-size:14px;color:var(--muted);margin:0;min-height:1.2em}
+footer{max-width:680px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-right,0px)) 120px max(16px,env(safe-area-inset-left,0px));font-size:13px;color:var(--muted);display:grid;gap:8px}
+footer p{margin:0}
+@media (min-width:720px){main{padding-top:40px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="in">
+    <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M8.5 12.2l2.4 2.4 4.6-4.8"/></svg>Cover Check</div>
+    <div class="stepno" id="stepno" aria-live="polite"></div>
+  </div>
+  <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+</div>
+
+<main id="app">
+
+  <!-- INTRO -->
+  <section class="screen" data-step="intro">
+    <div class="kicker">For people with company health insurance</div>
+    <h1 tabindex="-1">Is your company health cover enough?</h1>
+    <p class="lead">Most people have never checked. In two minutes, see what your policy would pay for a real hospital bill, and what your family would pay.</p>
+    <div class="hero-card">
+      <ul class="ticks">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>No sign-up and no phone number</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Nothing you enter is saved</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Rough answers are fine. Your health e-card helps if it's handy.</li>
+      </ul>
+      <button class="btn wide" type="button" id="startBtn">Start the check</button>
+      <p class="meta">5 short questions · about 2 minutes</p>
+    </div>
+  </section>
+
+  <!-- BELIEF -->
+  <section class="screen" data-step="belief" hidden>
+    <div class="kicker">First, a gut check</div>
+    <h2 tabindex="-1">How sure are you that your company health cover is enough for your family?</h2>
+    <div class="q">
+      <div class="scale" role="radiogroup" aria-label="How sure, from 1 to 5">
+        <label class="choice"><input type="radio" name="belief" value="1"><span class="c">1</span></label>
+        <label class="choice"><input type="radio" name="belief" value="2"><span class="c">2</span></label>
+        <label class="choice"><input type="radio" name="belief" value="3"><span class="c">3</span></label>
+        <label class="choice"><input type="radio" name="belief" value="4"><span class="c">4</span></label>
+        <label class="choice"><input type="radio" name="belief" value="5"><span class="c">5</span></label>
+      </div>
+      <div class="scale-ends"><span>Not sure at all</span><span>Completely sure</span></div>
+    </div>
+  </section>
+
+  <!-- SUM INSURED -->
+  <section class="screen" data-step="si" hidden>
+    <div class="kicker">Your policy</div>
+    <h2 tabindex="-1">What is your sum insured?</h2>
+    <p class="sub">The most your policy pays in a year. It's on your health e-card or HR portal.</p>
+    <div class="choices two" role="radiogroup" aria-label="Sum insured">
+      <label class="choice"><input type="radio" name="si" value="200000"><span class="c"><span class="tx"><span class="t">₹2 lakh</span></span></span></label>
+      <label class="choice"><input type="radio" name="si" value="300000"><span class="c"><span class="tx"><span class="t">₹3 lakh</span></span></span></label>
+      <label class="choice"><input type="radio" name="si" value="500000"><span class="c"><span class="tx"><span class="t">₹5 lakh</span></span></span></label>
+      <label class="choice"><input type="radio" name="si" value="700000"><span class="c"><span class="tx"><span class="t">₹7 lakh</span></span></span></label>
+      <label class="choice"><input type="radio" name="si" value="1000000"><span class="c"><span class="tx"><span class="t">₹10 lakh</span></span></span></label>
+      <label class="choice"><input type="radio" name="si" value="1500000"><span class="c"><span class="tx"><span class="t">₹15 lakh</span></span></span></label>
+    </div>
+    <div class="choices">
+      <label class="choice"><input type="radio" name="si" value="custom"><span class="c"><span class="tx"><span class="t">Another amount</span></span></span></label>
+      <div class="field" id="siCustomWrap" hidden><span>₹ lakh</span><input id="siCustom" name="siCustom" type="number" min="0.5" step="0.5" inputmode="decimal" placeholder="e.g. 4"></div>
+      <label class="choice"><input type="radio" name="si" value="unknown"><span class="c"><span class="tx"><span class="t">I don't know</span><span class="s">That's common. We'll show you where to find it.</span></span></span></label>
+    </div>
+    <div class="help" id="siHelp" hidden>
+      <strong>Where to find it later</strong>
+      <ul>
+        <li>Your health e-card (often called a TPA card), usually emailed when you joined</li>
+        <li>Your company's HR or benefits portal, under insurance</li>
+        <li>Your insurer's or claims administrator's app, using your employee ID</li>
+      </ul>
+      <p style="margin:8px 0 0">For now we'll use ₹5 lakh as an example.</p>
+    </div>
+  </section>
+
+  <!-- FAMILY -->
+  <section class="screen" data-step="family" hidden>
+    <div class="kicker">Your policy</div>
+    <h2 tabindex="-1">Who is on your company policy?</h2>
+    <div class="choices">
+      <label class="choice"><input type="checkbox" checked disabled><span class="c"><span class="tx"><span class="t">You</span></span></span></label>
+      <label class="choice"><input type="checkbox" name="spouse" checked><span class="c"><span class="tx"><span class="t">Spouse</span></span></span></label>
+      <label class="choice"><input type="checkbox" name="kids" checked><span class="c"><span class="tx"><span class="t">Children</span></span></span></label>
+      <label class="choice"><input type="checkbox" name="parents"><span class="c"><span class="tx"><span class="t">Parents</span><span class="s">Many company policies leave parents out</span></span></span></label>
+    </div>
+    <div class="q">
+      <div class="qlabel" id="sharedLbl">Do you all share one amount?</div>
+      <div class="choices" role="radiogroup" aria-labelledby="sharedLbl">
+        <label class="choice"><input type="radio" name="shared" value="yes" checked><span class="c"><span class="tx"><span class="t">Yes, one amount for all of us</span><span class="s">Called a family floater</span></span></span></label>
+        <label class="choice"><input type="radio" name="shared" value="no"><span class="c"><span class="tx"><span class="t">No, each person has their own</span></span></span></label>
+        <label class="choice"><input type="radio" name="shared" value="unsure"><span class="c"><span class="tx"><span class="t">Not sure</span><span class="s">We'll assume it is shared</span></span></span></label>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROOM LIMIT -->
+  <section class="screen" data-step="room" hidden>
+    <div class="kicker">Your policy</div>
+    <h2 tabindex="-1">Is there a limit on hospital room rent?</h2>
+    <p class="sub">Many policies cap what they pay per day for your room. Going above it cuts more than just the room.</p>
+    <div class="choices" role="radiogroup" aria-label="Room rent limit">
+      <label class="choice"><input type="radio" name="rr" value="none"><span class="c"><span class="tx"><span class="t">No limit</span></span></span></label>
+      <label class="choice"><input type="radio" name="rr" value="pct1"><span class="c"><span class="tx"><span class="t">1% of sum insured per day</span><span class="s" id="pct1Note"></span></span></span></label>
+      <label class="choice"><input type="radio" name="rr" value="pct2"><span class="c"><span class="tx"><span class="t">2% of sum insured per day</span><span class="s" id="pct2Note"></span></span></span></label>
+      <label class="choice"><input type="radio" name="rr" value="fixed"><span class="c"><span class="tx"><span class="t">A fixed amount per day</span></span></span></label>
+      <div class="field" id="fixedWrap" hidden><span>₹ per day</span><input id="fixed" name="fixed" type="number" min="0" step="500" value="5000" inputmode="numeric"></div>
+      <label class="choice"><input type="radio" name="rr" value="unknown"><span class="c"><span class="tx"><span class="t">I don't know</span><span class="s">We'll assume 1%, a common limit</span></span></span></label>
+    </div>
+  </section>
+
+  <!-- CO-PAY -->
+  <section class="screen" data-step="copay" hidden>
+    <div class="kicker">Your policy</div>
+    <h2 tabindex="-1">When a parent is admitted, do you pay part of the bill?</h2>
+    <p class="sub">This is called co-pay. It is common on company policies that include parents.</p>
+    <div class="choices two" role="radiogroup" aria-label="Parent co-pay">
+      <label class="choice"><input type="radio" name="copay" value="0" checked><span class="c"><span class="tx"><span class="t">No</span></span></span></label>
+      <label class="choice"><input type="radio" name="copay" value="0.1"><span class="c"><span class="tx"><span class="t">Yes, 10%</span></span></span></label>
+      <label class="choice"><input type="radio" name="copay" value="0.2"><span class="c"><span class="tx"><span class="t">Yes, 20%</span></span></span></label>
+      <label class="choice"><input type="radio" name="copay" value="unknown"><span class="c"><span class="tx"><span class="t">Not sure</span><span class="s">We'll assume 10%</span></span></span></label>
+    </div>
+  </section>
+
+  <!-- STAY -->
+  <section class="screen" data-step="stay" hidden>
+    <div class="kicker">The hospital stay</div>
+    <h2 tabindex="-1">Now picture a hospital stay</h2>
+    <p class="sub">Pick something realistic for your family. You can change it on the next screen.</p>
+    <div class="q">
+      <div class="qlabel" id="patLbl">Who is admitted?</div>
+      <div class="pills" role="radiogroup" aria-labelledby="patLbl">
+        <label class="choice"><input type="radio" name="patient" value="me" checked><span class="c">You</span></label>
+        <label class="choice"><input type="radio" name="patient" value="spouse"><span class="c">Spouse</span></label>
+        <label class="choice"><input type="radio" name="patient" value="child"><span class="c">Child</span></label>
+        <label class="choice"><input type="radio" name="patient" value="parent"><span class="c">Parent</span></label>
+      </div>
+    </div>
+    <div class="q">
+      <div class="qlabel" id="billLbl">Total hospital bill</div>
+      <div class="pills" role="radiogroup" aria-labelledby="billLbl">
+        <label class="choice"><input type="radio" name="bill" value="3"><span class="c">₹3 lakh</span></label>
+        <label class="choice"><input type="radio" name="bill" value="8" checked><span class="c">₹8 lakh</span></label>
+        <label class="choice"><input type="radio" name="bill" value="15"><span class="c">₹15 lakh</span></label>
+        <label class="choice"><input type="radio" name="bill" value="custom"><span class="c">Other</span></label>
+      </div>
+      <div class="field" id="billCustomWrap" hidden><span>₹ lakh</span><input id="billCustom" name="billCustom" type="number" min="0.5" step="0.5" inputmode="decimal" placeholder="e.g. 5"></div>
+    </div>
+    <div class="q">
+      <div class="qlabel">Days in hospital</div>
+      <div class="stepper"><button type="button" id="dMinus" aria-label="One day fewer">−</button><output id="daysOut" aria-live="polite">6 days</output><button type="button" id="dPlus" aria-label="One day more">+</button></div>
+    </div>
+    <div class="q">
+      <div class="qlabel" id="cityLbl">City</div>
+      <div class="pills" role="radiogroup" aria-labelledby="cityLbl">
+        <label class="choice"><input type="radio" name="city" value="metro" checked><span class="c">Metro</span></label>
+        <label class="choice"><input type="radio" name="city" value="other"><span class="c">Other city</span></label>
+      </div>
+    </div>
+    <div class="q">
+      <div class="qlabel" id="roomLbl">Room you would take</div>
+      <div class="choices" role="radiogroup" aria-labelledby="roomLbl">
+        <label class="choice"><input type="radio" name="room" value="shared"><span class="c"><span class="tx"><span class="t">Shared room</span></span><span class="v" id="rate-shared"></span></span></label>
+        <label class="choice"><input type="radio" name="room" value="single" checked><span class="c"><span class="tx"><span class="t">Single private room</span></span><span class="v" id="rate-single"></span></span></label>
+        <label class="choice"><input type="radio" name="room" value="deluxe"><span class="c"><span class="tx"><span class="t">Deluxe room</span></span><span class="v" id="rate-deluxe"></span></span></label>
+      </div>
+      <button type="button" class="linkbtn" id="rateToggle" style="justify-self:start">I know my hospital's room rate</button>
+      <div class="field" id="rateWrap" hidden><span>₹ per day</span><input id="rate" name="rate" type="number" min="0" step="500" inputmode="numeric"></div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="screen" data-step="result" hidden>
+    <div class="kicker">Your result</div>
+    <h2 tabindex="-1" id="resHead"></h2>
+
+    <div class="panel">
+      <span class="verdict" id="verdict"><i></i><span></span></span>
+      <div class="big">
+        <div class="lbl">You would pay</div>
+        <span class="est" id="estTag" hidden>Estimate: based on assumed terms</span>
+        <div class="num" id="oop"></div>
+        <div class="after" id="paysLine"></div>
+        <p class="range" id="rangeLine" hidden></p>
+        <p class="assume" id="assumeLine"></p>
+      </div>
+      <div>
+        <div class="bar" aria-hidden="true"><i class="p" id="barP"></i><i class="y" id="barY"></i></div>
+        <div class="legend" style="margin-top:8px"><span><b style="background:var(--ok)"></b>Policy pays</span><span><b style="background:var(--gap)"></b>You pay</span></div>
+      </div>
+      <ul class="reasons" id="reasons"></ul>
+      <p class="flag" id="flags" hidden></p>
+    </div>
+
+    <div class="mirror" id="mirror" hidden><span class="score" id="mirrorScore"></span><span id="mirrorText"></span></div>
+
+    <div class="panel tweak">
+      <h3>Try another situation</h3>
+      <div class="qlabel">Bill</div>
+      <div class="pills" role="radiogroup" aria-label="Bill">
+        <label class="choice"><input type="radio" name="tbill" value="3"><span class="c">₹3L</span></label>
+        <label class="choice"><input type="radio" name="tbill" value="8"><span class="c">₹8L</span></label>
+        <label class="choice"><input type="radio" name="tbill" value="15"><span class="c">₹15L</span></label>
+        <label class="choice"><input type="radio" name="tbill" value="25"><span class="c">₹25L</span></label>
+      </div>
+      <div class="qlabel">Room</div>
+      <div class="pills" role="radiogroup" aria-label="Room">
+        <label class="choice"><input type="radio" name="troom" value="shared"><span class="c">Shared</span></label>
+        <label class="choice"><input type="radio" name="troom" value="single"><span class="c">Single</span></label>
+        <label class="choice"><input type="radio" name="troom" value="deluxe"><span class="c">Deluxe</span></label>
+      </div>
+      <div class="qlabel">Who</div>
+      <div class="pills" role="radiogroup" aria-label="Who is admitted">
+        <label class="choice"><input type="radio" name="tpatient" value="me"><span class="c">You</span></label>
+        <label class="choice"><input type="radio" name="tpatient" value="spouse"><span class="c">Spouse</span></label>
+        <label class="choice"><input type="radio" name="tpatient" value="child"><span class="c">Child</span></label>
+        <label class="choice"><input type="radio" name="tpatient" value="parent"><span class="c">Parent</span></label>
+      </div>
+    </div>
+
+    <details class="acc" open>
+      <summary>What you can do</summary>
+      <div class="body" id="opts"></div>
+    </details>
+
+    <details class="acc">
+      <summary>If you leave your job</summary>
+      <div class="body">
+        <p>Company cover usually ends on your last working day. HR can confirm the exact date.</p>
+        <ul class="tl">
+          <li><span class="w">Last day</span><span>Company cover stops for you and your family, including the <strong id="leaveSi"></strong> you are counting on today.</span></li>
+          <li><span class="w">Before you go</span><span>You can ask to move to the same insurer's individual policy. The insurer may check your health first, cover is usually capped at your current sum insured, and the premium can differ.</span></li>
+          <li><span class="w">New policy</span><span>A fresh personal policy has waiting periods: 30 days for illness (accidents are covered from day one), and up to 3 years for conditions you already have.</span></li>
+        </ul>
+        <p style="color:var(--muted)">Buying while you are still employed means those waiting years pass while your company cover still protects you.</p>
+      </div>
+    </details>
+
+    <details class="acc" open>
+      <summary>How the claim is worked out</summary>
+      <div class="body"><div class="tbl"><table id="tbl"></table></div>
+        <p class="note-sm" id="capNote" hidden></p>
+        <p style="color:var(--muted);font-size:13.5px">We assume 40% of the non-room bill is medicines, consumables, tests and implants, which room limits don't cut. Disease-wise caps, non-payable items and hospital packages are not included. Your real claim depends on your policy wording.</p>
+      </div>
+    </details>
+
+    <details class="acc" open>
+      <summary>Questions to ask HR</summary>
+      <div class="body">
+        <ol class="hr" id="hrList">
+          <li>What is my sum insured, and is it shared by my whole family?</li>
+          <li>Is there a room rent limit? How much per day?</li>
+          <li>Is there a co-pay when my parents are admitted?</li>
+          <li>Are there caps on specific treatments, like cataract or maternity?</li>
+          <li>On which date does my cover end if I resign?</li>
+          <li>Can I move to an individual policy with the same insurer when I leave?</li>
+          <li>Can I buy extra cover for my family through the company?</li>
+        </ol>
+        <div class="row"><a class="btn" id="sendHr" href="#" target="_blank" rel="noopener">Send to HR</a><button type="button" class="btn ghost" id="copyHr">Copy questions</button></div>
+      </div>
+    </details>
+
+    <!-- FEEDBACK -->
+    <section class="feedback" id="feedback" aria-labelledby="fbHead">
+      <div style="display:grid;gap:6px">
+        <h3 id="fbHead" style="font-size:20px">One last thing: help our study</h3>
+        <p class="lead">Four quick questions for our college project. Your answers go only to the person who sent you this link, and only if you press send.</p>
+      </div>
+      <div class="q">
+        <div class="qlabel" id="afterLbl">Now, how sure are you that your company cover is enough?</div>
+        <div class="scale" role="radiogroup" aria-labelledby="afterLbl">
+          <label class="choice"><input type="radio" name="after" value="1"><span class="c">1</span></label>
+          <label class="choice"><input type="radio" name="after" value="2"><span class="c">2</span></label>
+          <label class="choice"><input type="radio" name="after" value="3"><span class="c">3</span></label>
+          <label class="choice"><input type="radio" name="after" value="4"><span class="c">4</span></label>
+          <label class="choice"><input type="radio" name="after" value="5"><span class="c">5</span></label>
+        </div>
+        <div class="scale-ends"><span>Not sure at all</span><span>Completely sure</span></div>
+      </div>
+      <div class="q">
+        <div class="qlabel" id="knewLbl">Did you know your sum insured before today?</div>
+        <div class="pills" role="radiogroup" aria-labelledby="knewLbl">
+          <label class="choice"><input type="radio" name="knew" value="Yes"><span class="c">Yes</span></label>
+          <label class="choice"><input type="radio" name="knew" value="Roughly"><span class="c">Roughly</span></label>
+          <label class="choice"><input type="radio" name="knew" value="No"><span class="c">No</span></label>
+        </div>
+      </div>
+      <div class="q">
+        <div class="qlabel" id="intentLbl">Will you look into extra health cover in the next month?</div>
+        <div class="pills" role="radiogroup" aria-labelledby="intentLbl">
+          <label class="choice"><input type="radio" name="intent" value="Yes"><span class="c">Yes</span></label>
+          <label class="choice"><input type="radio" name="intent" value="Maybe"><span class="c">Maybe</span></label>
+          <label class="choice"><input type="radio" name="intent" value="No"><span class="c">No</span></label>
+        </div>
+      </div>
+      <div class="q">
+        <label class="qlabel" for="note">What surprised you, or what was confusing? (optional)</label>
+        <textarea id="note" name="note" placeholder="Anything you noticed"></textarea>
+      </div>
+      <div class="row">
+        <a class="btn" id="sendBtn" href="#" target="_blank" rel="noopener" aria-disabled="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4a.5.5 0 0 0 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.2-.2-.5-.3z"/></svg><span id="sendLabel">Send my answers</span></a>
+        <button type="button" class="btn ghost" id="copyFb">Copy answers</button>
+      </div>
+      <p class="toast" id="fbHint">Pick a number for the first question to send.</p>
+    </section>
+
+    <div class="panel" style="gap:12px">
+      <h3>Share this with your family</h3>
+      <p style="margin:0;color:var(--muted);font-size:14.5px">Insurance decisions are usually made together. Send them what you found.</p>
+      <div class="row">
+        <a class="btn ghost" id="shareWa" href="#" target="_blank" rel="noopener">Send on WhatsApp</a>
+        <button type="button" class="btn ghost" id="copySum">Copy summary</button>
+      </div>
+      <p class="toast" id="toast" role="status"></p>
+    </div>
+
+    <button type="button" class="linkbtn" id="restart" style="justify-self:center">Start over</button>
+  </section>
+</main>
+
+<footer>
+  <p>Student prototype for a Consumer Behaviour course project at IIM Shillong. It is an estimate, not insurance advice, and is not connected to any insurer or insurance website. Nothing you enter is stored.</p>
+  <p>Rules used: <a href="https://www.joinditto.in/articles/health-insurance/proportionate-deduction-in-health-insurance/" target="_blank" rel="noopener">proportionate deduction</a> · <a href="https://joinditto.in/articles/health-insurance/what-happens-to-your-corporate-insurance-after-you-leave-your-job/" target="_blank" rel="noopener">company cover after leaving a job</a> · <a href="https://www.joinditto.in/articles/health-insurance/ped-waiting-period/" target="_blank" rel="noopener">waiting periods (IRDAI 2024)</a></p>
+</footer>
+
+<nav class="nav" id="nav" hidden>
+  <div class="in">
+    <button type="button" class="btn ghost" id="backBtn">Back</button>
+    <button type="button" class="btn" id="nextBtn">Continue</button>
+  </div>
+</nav>
+
+<script>
+/* ===== SETTINGS: edit these two lines before you share the link ===== */
+/* Your WhatsApp number with country code, no + and no spaces, e.g. '919876543210'. Answers are sent to you. Leave '' to let people pick the chat. */
+const FEEDBACK_WHATSAPP = '';
+/* Optional: a Google Form pre-filled link (see README). If set, the send button opens the form instead of WhatsApp. */
+const FEEDBACK_FORM_URL = '';
+/* ===================================================================== */
+
+/*CALC-START*/
+function calc(p){
+  const B = Math.max(0, p.bill), d = Math.max(1, Math.round(p.days || 1));
+  const onPolicy = p.patient === 'me' || (p.patient === 'spouse' && p.covered.spouse) ||
+                   (p.patient === 'child' && p.covered.children) || (p.patient === 'parent' && p.covered.parents);
+  const roomBilled = Math.min(Math.max(0, p.roomRate) * d, B);
+  const rest = B - roomBilled;
+  const exempt = rest * p.exemptShare;
+  const linked = rest - exempt;
+  let L = Infinity;
+  if (p.limitType === 'pct1' || p.limitType === 'unknown') L = 0.01 * p.si;
+  else if (p.limitType === 'pct2') L = 0.02 * p.si;
+  else if (p.limitType === 'fixed') L = Math.max(0, p.fixedLimit);
+  const ratio = p.roomRate > L ? (p.roomRate > 0 ? L / p.roomRate : 1) : 1;
+  const roomPay = ratio < 1 ? Math.min(L * d, roomBilled) : roomBilled;
+  const linkedPay = linked * ratio;
+  const eligible = roomPay + linkedPay + exempt;
+  const copayAmt = p.patient === 'parent' ? eligible * p.copay : 0;
+  const afterCopay = eligible - copayAmt;
+  const available = Math.max(0, p.si - p.used);
+  const paid = onPolicy ? Math.min(afterCopay, available) : 0;
+  return {
+    bill: B, days: d, onPolicy, limit: L, ratio, available,
+    roomBilled, linked, exempt,
+    roomExcess: onPolicy ? roomBilled - roomPay : 0,
+    propDed: onPolicy ? linked - linkedPay : 0,
+    copay: onPolicy ? copayAmt : 0,
+    aboveSi: onPolicy ? afterCopay - paid : 0,
+    notCovered: onPolicy ? 0 : B,
+    paid, oop: B - paid
+  };
+}
+/*CALC-END*/
+
+const $ = id => document.getElementById(id);
+const RATES = { metro: { shared: 4000, single: 8000, deluxe: 14000 }, other: { shared: 2500, single: 5000, deluxe: 9000 } };
+const rup = n => '₹' + (Math.round(n / 100) * 100).toLocaleString('en-IN');
+const lakh = n => { const l = n / 1e5; return '₹' + (Number.isInteger(l) ? l : l.toFixed(1)) + ' lakh'; };
+const WHO = { me: 'you', spouse: 'your spouse', child: 'your child', parent: 'your parent' };
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const RR = { none: 'no limit', pct1: '1% a day', pct2: '2% a day', fixed: 'fixed per day', unknown: "don't know" };
+
+const S = {
+  belief: null, si: null, siMode: null, spouse: true, kids: true, parents: false, shared: 'yes',
+  rr: null, fixed: 5000, copay: 0, copayUnknown: false, patient: 'me', bill: 8, billMode: '8',
+  days: 6, city: 'metro', room: 'single', rate: 8000, rateCustom: false,
+  after: null, knew: null, intent: null, note: ''
+};
+const STEPS = ['intro', 'belief', 'si', 'family', 'room', 'copay', 'stay', 'result'];
+const flow = () => STEPS.filter(s => s !== 'copay' || S.parents);
+let cur = 'intro';
+
+function params(){
+  return {
+    si: S.si || 0, used: 0, limitType: S.rr || 'unknown', fixedLimit: S.fixed,
+    copay: S.copayUnknown ? 0.1 : S.copay, patient: S.patient,
+    covered: { spouse: S.spouse, children: S.kids, parents: S.parents },
+    bill: S.bill * 1e5, days: S.days, roomRate: S.rate, exemptShare: 0.4
+  };
+}
+
+function valid(step){
+  if (step === 'belief') return S.belief !== null;
+  if (step === 'si') return S.si !== null && S.si > 0;
+  if (step === 'room') return S.rr !== null && (S.rr !== 'fixed' || S.fixed > 0);
+  if (step === 'stay') return S.bill > 0;
+  return true;
+}
+
+function go(id, focus = true){
+  cur = id;
+  document.querySelectorAll('[data-step]').forEach(el => { el.hidden = el.dataset.step !== id; });
+  const f = flow(), qs = f.filter(s => s !== 'intro' && s !== 'result'), qi = qs.indexOf(id);
+  $('nav').hidden = id === 'intro' || id === 'result';
+  $('stepno').textContent = qi >= 0 ? `Question ${qi + 1} of ${qs.length}` : (id === 'result' ? 'Your result' : '');
+  $('bar').style.width = id === 'intro' ? '0%' : id === 'result' ? '100%' : ((qi + 1) / (qs.length + 1) * 100) + '%';
+  $('nextBtn').textContent = id === 'stay' ? 'See my result' : 'Continue';
+  if (id === 'room') { $('pct1Note').textContent = `${rup(0.01 * S.si)} a day for you`; $('pct2Note').textContent = `${rup(0.02 * S.si)} a day for you`; }
+  if (id === 'result') { sync(); renderResult(); if (!FIRST) FIRST = { ...LAST, si: S.siMode, rr: S.rr }; }
+  refreshNav();
+  window.scrollTo(0, 0);
+  if (focus) { const h = document.querySelector(`[data-step="${id}"] [tabindex="-1"]`); if (h) h.focus({ preventScroll: true }); }
+}
+function refreshNav(){ $('nextBtn').disabled = !valid(cur); }
+function next(){ if (!valid(cur)) return; const f = flow(); const i = f.indexOf(cur); if (i < f.length - 1) go(f[i + 1]); }
+function back(){ const f = flow(); const i = f.indexOf(cur); if (i > 0) go(f[i - 1]); }
+
+function setRate(){
+  if (!S.rateCustom) S.rate = RATES[S.city][S.room];
+  ['shared', 'single', 'deluxe'].forEach(r => { $('rate-' + r).textContent = rup(RATES[S.city][r]) + '/day'; });
+  if (!S.rateCustom) $('rate').value = S.rate;
+}
+function sync(){
+  document.querySelectorAll('input[name="tbill"]').forEach(i => { i.checked = S.billMode !== 'custom' && Number(i.value) === S.bill; });
+  document.querySelectorAll('input[name="troom"]').forEach(i => { i.checked = !S.rateCustom && i.value === S.room; });
+  document.querySelectorAll('input[name="tpatient"]').forEach(i => { i.checked = i.value === S.patient; });
+  document.querySelectorAll('input[name="patient"]').forEach(i => { i.checked = i.value === S.patient; });
+  document.querySelectorAll('input[name="room"]').forEach(i => { i.checked = i.value === S.room; });
+  document.querySelectorAll('input[name="bill"]').forEach(i => { i.checked = S.billMode === 'custom' ? i.value === 'custom' : Number(i.value) === S.bill; });
+}
+
+function onInput(e){
+  const t = e.target, n = t.name, v = t.value;
+  if (!n) return;
+  switch (n) {
+    case 'belief': S.belief = +v; if (e.type === 'change' && cur === 'belief') setTimeout(next, 260); break;
+    case 'si':
+      S.siMode = v;
+      $('siCustomWrap').hidden = v !== 'custom'; $('siHelp').hidden = v !== 'unknown';
+      if (v === 'unknown') S.si = 5e5;
+      else if (v === 'custom') { const x = parseFloat($('siCustom').value); S.si = x > 0 ? x * 1e5 : null; if (e.type === 'change') $('siCustom').focus(); }
+      else S.si = +v;
+      break;
+    case 'siCustom': if (S.siMode === 'custom') { const x = parseFloat(v); S.si = x > 0 ? x * 1e5 : null; } break;
+    case 'spouse': case 'kids': case 'parents': S[n] = t.checked; break;
+    case 'shared': S.shared = v; break;
+    case 'rr': S.rr = v; $('fixedWrap').hidden = v !== 'fixed'; break;
+    case 'fixed': S.fixed = parseFloat(v) || 0; break;
+    case 'copay': S.copayUnknown = v === 'unknown'; S.copay = v === 'unknown' ? 0.1 : +v; break;
+    case 'patient': case 'tpatient': S.patient = v; break;
+    case 'bill': S.billMode = v; $('billCustomWrap').hidden = v !== 'custom';
+      if (v === 'custom') { const x = parseFloat($('billCustom').value); S.bill = x > 0 ? x : 0; } else S.bill = +v; break;
+    case 'billCustom': if (S.billMode === 'custom') { const x = parseFloat(v); S.bill = x > 0 ? x : 0; } break;
+    case 'tbill': S.bill = +v; S.billMode = v; $('billCustomWrap').hidden = true; break;
+    case 'city': S.city = v; setRate(); break;
+    case 'room': case 'troom': S.room = v; S.rateCustom = false; setRate(); break;
+    case 'rate': S.rate = parseFloat(v) || 0; S.rateCustom = true; break;
+    case 'after': S.after = +v; break;
+    case 'knew': S.knew = v; break;
+    case 'intent': S.intent = v; break;
+    case 'note': S.note = v.trim(); break;
+  }
+  if (['tbill', 'troom', 'tpatient'].includes(n)) { sync(); renderResult(); }
+  if (['after', 'knew', 'intent', 'note'].includes(n)) renderFeedback();
+  refreshNav();
+}
+document.addEventListener('change', onInput);
+document.addEventListener('input', e => { if (e.target.type === 'number' || e.target.tagName === 'TEXTAREA') onInput(e); });
+
+function biggest(r){
+  const parts = [['room', r.roomExcess + r.propDed], ['si', r.aboveSi], ['copay', r.copay], ['none', r.notCovered]].sort((a, b) => b[1] - a[1]);
+  return parts[0][1] > 0 ? parts[0][0] : null;
+}
+
+let LAST = null, FIRST = null;
+function renderResult(){
+  const p = params(), r = calc(p); LAST = { p, r };
+  const share = r.bill > 0 ? r.oop / r.bill : 0;
+  const covered = r.oop <= Math.max(10000, 0.03 * r.bill);
+  const who = WHO[p.patient];
+  $('resHead').textContent = `If ${who} spent ${r.days} days in hospital with a ${lakh(r.bill)} bill`;
+  const v = $('verdict'); v.className = 'verdict ' + (covered ? 'ok' : share < 0.25 ? 'part' : 'bad');
+  v.querySelector('span').textContent = covered ? 'You are covered' : share < 0.25 ? 'Partly covered' : 'Big gap';
+  $('oop').textContent = rup(r.oop); $('oop').className = 'num' + (covered ? ' ok' : '');
+  $('paysLine').textContent = `Your policy pays ${rup(r.paid)} of the ${rup(r.bill)} bill (${Math.round((1 - share) * 100)}%).`;
+  $('barP').style.width = (100 - share * 100) + '%'; $('barY').style.width = (share * 100) + '%';
+
+  const items = [];
+  if (!r.onPolicy) items.push(['Not on your policy', r.notCovered, `${cap(who)} ${p.patient === 'me' ? 'are' : 'is'} not covered by your company policy, so the whole bill falls on you.`]);
+  if (r.roomExcess + r.propDed > 500) items.push(['Room rent limit', r.roomExcess + r.propDed, `Your room costs ${rup(p.roomRate)} a day but your limit is ${rup(r.limit)}. So the insurer pays only ${Math.round(r.ratio * 100)}% of the room, and also of the doctor, nursing and operation charges.`]);
+  if (r.aboveSi > 500) items.push(['Bill bigger than your cover', r.aboveSi, `Your policy pays at most ${lakh(r.available)} a year${S.shared !== 'no' ? ', shared by everyone on it' : ''}. Everything above that is yours.`]);
+  if (r.copay > 500) items.push(['Parent co-pay', r.copay, `You pay ${Math.round(p.copay * 100)}% of your parent's bill${S.copayUnknown ? ' (assumed)' : ''}.`]);
+  items.sort((a, b) => b[1] - a[1]);
+  $('reasons').innerHTML = items.length
+    ? items.map(([t, a, d]) => `<li><span class="rt">${t}</span><span class="ra">${rup(a)}</span><span class="rd">${d}</span></li>`).join('')
+    : `<li class="ok"><span class="rt">Nothing major</span><span class="ra" style="color:var(--ok)">${rup(r.oop)}</span><span class="rd">Your room is within your limit and the bill fits inside your sum insured.</span></li>`;
+
+  const fl = [];
+  if (S.siMode === 'unknown') fl.push('This uses ₹5 lakh as an example sum insured. Check your e-card for the real figure.');
+  if (S.rr === 'unknown') fl.push('Room rent limit assumed at 1% of sum insured a day. Ask HR for yours.');
+  $('flags').hidden = !fl.length; $('flags').textContent = fl.join(' ');
+
+  // v2: estimate tag and best-to-worst range when terms are assumed
+  const assumed = S.siMode === 'unknown' || S.rr === 'unknown' || (p.patient === 'parent' && S.copayUnknown);
+  $('estTag').hidden = !assumed; $('rangeLine').hidden = !assumed;
+  if (assumed) {
+    const best = calc({ ...p, si: S.siMode === 'unknown' ? 10e5 : p.si, limitType: S.rr === 'unknown' ? 'none' : p.limitType, copay: S.copayUnknown ? 0 : p.copay });
+    const worst = calc({ ...p, si: S.siMode === 'unknown' ? 3e5 : p.si, limitType: S.rr === 'unknown' ? 'pct1' : p.limitType, copay: S.copayUnknown ? 0.2 : p.copay });
+    const lo = Math.min(best.oop, worst.oop), hi = Math.max(best.oop, worst.oop);
+    $('rangeLine').textContent = `With your real terms, this could be anywhere from ${rup(lo)} to ${rup(hi)}. Ask HR for them and run the check again.`;
+  }
+  $('assumeLine').textContent = `Room assumed: ${rup(p.roomRate)} a day${S.rateCustom ? ' (your figure)' : ` (${S.room} room, ${S.city === 'metro' ? 'metro' : 'other'} city)`}.`;
+  const cn = $('capNote');
+  if (r.onPolicy && r.aboveSi > 500 && (r.roomExcess + r.propDed) > 500) {
+    cn.hidden = false;
+    cn.textContent = 'Deductions are applied in this order, like a claim sheet. Because this bill is above your sum insured, the cover cap decides most of what you pay: a cheaper room changes your share less than the room-rent line suggests.';
+  } else if (covered) {
+    cn.hidden = false;
+    cn.textContent = 'Real claims usually leave out a few non-payable items, such as gloves, admission kits and admin charges, so expect to pay a small amount even when you are covered.';
+  } else cn.hidden = true;
+  const hrBody = 'Hello,\n\nI checked our company health cover and would like to confirm a few terms:\n\n' + [...$('hrList').children].map((li, i) => `${i + 1}. ${li.textContent}`).join('\n') + '\n\nThank you.';
+  $('sendHr').href = 'mailto:?subject=' + encodeURIComponent('Questions about our company health cover') + '&body=' + encodeURIComponent(hrBody);
+
+  if (S.belief) {
+    $('mirror').hidden = false; $('mirrorScore').textContent = S.belief + '/5';
+    $('mirrorText').textContent = covered
+      ? 'is how sure you were that your cover is enough. For this situation, you were right.'
+      : `is how sure you were that your cover is enough. For this situation, you would still pay ${rup(r.oop)}.`;
+  }
+  $('leaveSi').textContent = lakh(p.si);
+
+  const row = (label, amt, cls) => `<tr class="${cls || ''}${amt < 1 && cls === 'ded' ? ' zero' : ''}"><td>${label}</td><td>${cls === 'ded' && amt >= 1 ? '− ' : ''}${rup(amt)}</td></tr>`;
+  let h = '<tr class="sec"><td colspan="2">Hospital bill</td></tr>';
+  h += row(`Room rent (${r.days} days)`, r.roomBilled) + row('Doctor, nursing, operation theatre', r.linked) + row('Medicines, consumables, tests, implants', r.exempt) + row('Total billed', r.bill, 'tot');
+  h += '<tr class="sec"><td colspan="2">Deductions</td></tr>';
+  if (!r.onPolicy) h += row('Patient not on the policy', r.notCovered, 'ded');
+  else {
+    h += row('Room rent above your limit', r.roomExcess, 'ded') + row('Proportionate cut on linked charges', r.propDed, 'ded');
+    if (p.patient === 'parent') h += row('Parent co-pay', r.copay, 'ded');
+    h += row('Above your sum insured', r.aboveSi, 'ded');
+  }
+  h += row('Policy pays', r.paid, 'tot');
+  $('tbl').innerHTML = h;
+
+  renderOptions(p, r, covered);
+  $('shareWa').href = 'https://wa.me/?text=' + encodeURIComponent(summary());
+  renderFeedback();
+}
+
+function renderOptions(p, r, covered){
+  const o = [];
+  if (covered) o.push(['Right now', 'You are covered for this situation', 'Check again at every renewal, before you switch jobs, and if you add your parents.']);
+  if (r.onPolicy && p.roomRate > r.limit && isFinite(r.limit)) {
+    const alt = calc({ ...p, bill: r.bill - (p.roomRate - r.limit) * r.days, roomRate: r.limit });
+    const save = r.oop - alt.oop;
+    if (save > 500) o.push(['Costs nothing', 'Pick a room within your limit', `A room at ${rup(r.limit)} a day would bring your share from ${rup(r.oop)} to ${rup(alt.oop)}. That saves ${rup(save)}.`]);
+  }
+  if (!covered) o.push(['Adds to what you have', 'Super top-up', `It pays the part of a year's hospital bills above an amount you choose, called the deductible. With a deductible of ${lakh(p.si)}, it would cover ${r.aboveSi > 0 ? `the ${rup(r.aboveSi)} above your sum insured here` : 'bills that go past your company cover'}. It usually costs much less than a full policy. If your company cover ends, the first ${lakh(p.si)} is yours to pay unless you have another policy.`]);
+  o.push(['Stays with you', 'Your own health policy', 'It keeps covering you when you change jobs or stop working, and its waiting periods start counting from the day you buy it.']);
+  if (!p.covered.parents) o.push(['Often missed', 'Cover for your parents', 'They are not on your company policy, so their hospital bills would be paid fully from your pocket.']);
+  $('opts').innerHTML = o.map(([t, h, d]) => `<div class="opt"><span class="tag">${t}</span><h3>${h}</h3><p>${d}</p></div>`).join('');
+}
+
+function summary(){
+  const { p, r } = LAST || { p: params(), r: calc(params()) };
+  const b = biggest(r);
+  const reason = { room: ', mostly because of the room rent limit', si: ', mostly because the bill is bigger than our cover', copay: ', mostly because of the parent co-pay', none: ' because that person is not on the policy' }[b] || '';
+  const whoTxt = { me: 'I', spouse: 'my spouse', child: 'our child', parent: 'my parent' }[p.patient];
+  return `I checked our company health cover on Cover Check. Our sum insured is ${lakh(p.si)}${S.shared !== 'no' ? ', shared by the family' : ' per person'}. ` +
+    `If ${whoTxt} had a ${lakh(r.bill)} hospital bill, the policy would pay about ${rup(r.paid)} and we would pay ${rup(r.oop)}${reason}. ` +
+    `The cover also stops if I leave the job. We should check the room rent limit and parents' cover with HR.`;
+}
+
+function feedbackText(){
+  const { p, r } = FIRST || LAST;
+  const lines = [
+    'Cover Check feedback',
+    `Before: ${S.belief}/5 sure my cover is enough`,
+    `After: ${S.after}/5`,
+    `Knew my sum insured before today: ${S.knew || 'not answered'}`,
+    `Will look into extra cover in the next month: ${S.intent || 'not answered'}`,
+    `Result: I would pay ${rup(r.oop)} of a ${lakh(r.bill)} bill (cover ${S.siMode === 'unknown' ? "don't know" : lakh(p.si)}, room limit ${RR[S.rr]})`
+  ];
+  if (FIRST && LAST && LAST.r !== FIRST.r) lines.push(`Also tried: ${rup(LAST.r.oop)} of a ${lakh(LAST.r.bill)} bill`);
+  if (S.note) lines.push(`Comment: ${S.note}`);
+  return lines.join('\n');
+}
+
+function renderFeedback(){
+  if (!LAST) return;
+  const ready = S.after !== null;
+  const btn = $('sendBtn');
+  btn.setAttribute('aria-disabled', ready ? 'false' : 'true');
+  $('fbHint').textContent = ready ? (FEEDBACK_FORM_URL ? 'Opens a short form with your answers filled in. Press submit there.' : 'Opens WhatsApp with your answers typed out. Press send there.') : 'Pick a number for the first question to send.';
+  if (!ready) { btn.href = '#'; return; }
+  if (FEEDBACK_FORM_URL) {
+    const { p, r } = FIRST || LAST;
+    const map = { BEFORE: S.belief, AFTER: S.after, KNEW: S.knew || '', INTENT: S.intent || '', NOTE: S.note || '',
+      RESULT: `Pays ${rup(r.oop)} of ${lakh(r.bill)}; cover ${S.siMode === 'unknown' ? 'unknown' : lakh(p.si)}; room limit ${RR[S.rr]}` };
+    let url = FEEDBACK_FORM_URL;
+    Object.entries(map).forEach(([k, val]) => { url = url.split('=' + k).join('=' + encodeURIComponent(val)); });
+    btn.href = url; $('sendLabel').textContent = 'Send my answers';
+  } else {
+    btn.href = `https://wa.me/${FEEDBACK_WHATSAPP}?text=` + encodeURIComponent(feedbackText());
+    $('sendLabel').textContent = 'Send my answers on WhatsApp';
+  }
+}
+$('sendBtn').addEventListener('click', e => {
+  if ($('sendBtn').getAttribute('aria-disabled') === 'true') { e.preventDefault(); return; }
+  setTimeout(() => { $('fbHint').textContent = 'Thank you. If nothing opened, tap Copy answers and send them to the person who shared this link.'; }, 400);
+});
+
+function flash(el, msg){ el.textContent = msg; setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 3000); }
+async function copy(text, el, ok){
+  try { await navigator.clipboard.writeText(text); flash(el, ok); }
+  catch (err) { flash(el, 'Copy did not work here. Please select and copy the text manually.'); }
+}
+
+$('startBtn').addEventListener('click', () => go('belief'));
+$('nextBtn').addEventListener('click', next);
+$('backBtn').addEventListener('click', back);
+$('dMinus').addEventListener('click', () => { S.days = Math.max(1, S.days - 1); $('daysOut').textContent = S.days + (S.days === 1 ? ' day' : ' days'); });
+$('dPlus').addEventListener('click', () => { S.days = Math.min(60, S.days + 1); $('daysOut').textContent = S.days + ' days'; });
+$('rateToggle').addEventListener('click', () => { $('rateWrap').hidden = false; $('rateToggle').hidden = true; $('rate').focus(); });
+$('copySum').addEventListener('click', () => copy(summary(), $('toast'), 'Summary copied.'));
+$('copyHr').addEventListener('click', () => copy([...$('hrList').children].map((li, i) => `${i + 1}. ${li.textContent}`).join('\n'), $('toast'), 'Questions copied.'));
+$('copyFb').addEventListener('click', () => { if (S.after === null) { flash($('fbHint'), 'Pick a number for the first question first.'); return; } copy(feedbackText(), $('fbHint'), 'Answers copied. Paste them to the person who shared this link.'); });
+$('restart').addEventListener('click', () => location.reload());
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !$('nav').hidden && !['TEXTAREA', 'BUTTON', 'A'].includes(e.target.tagName)) { e.preventDefault(); next(); }
+});
+
+setRate(); sync(); go('intro', false);
+</script>
+</body>
+</html>
